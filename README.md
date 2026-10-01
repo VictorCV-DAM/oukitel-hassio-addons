@@ -46,6 +46,14 @@ Standalone background service that connects directly to the Wonderfree / Acceler
 <br/>
 
 <div align="center">
+  <h3>🏪 Available in Home Assistant Add-on Store</h3>
+  <img src="docs/images/01_addon_store_search.png" alt="Oukitel Addon Store" width="80%" />
+  <p><i>One-click installation via Home Assistant Supervised / OS Add-on Store.</i></p>
+</div>
+
+<br/>
+
+<div align="center">
   <table width="100%">
     <tr>
       <td width="50%" align="center">

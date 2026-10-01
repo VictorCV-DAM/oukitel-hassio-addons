@@ -49,11 +49,21 @@ Standalone background service that connects directly to the Wonderfree / Acceler
   <table width="100%">
     <tr>
       <td width="50%" align="center">
-        <b>Real-Time Telemetry & Bidirectional Controls</b><br/><br/>
+        <b>Multi-Region Cloud Setup</b><br/><br/>
+        <img src="docs/images/02_login_dialog.png" alt="Setup Dialog" width="95%"/>
+      </td>
+      <td width="50%" align="center">
+        <b>Automatic Discovery</b><br/><br/>
+        <img src="docs/images/03_device_discovered.png" alt="Device Discovered" width="95%"/>
+      </td>
+    </tr>
+    <tr>
+      <td width="50%" align="center">
+        <b>Real-Time Telemetry & Controls</b><br/><br/>
         <img src="docs/images/05_device_dashboard.png" alt="Oukitel Dashboard" width="95%"/>
       </td>
       <td width="50%" align="center">
-        <b>Adjustable Update Frequency & Options</b><br/><br/>
+        <b>Adjustable Update Frequency</b><br/><br/>
         <img src="docs/images/04_options_frequency.png" alt="Update Frequency" width="95%"/>
       </td>
     </tr>

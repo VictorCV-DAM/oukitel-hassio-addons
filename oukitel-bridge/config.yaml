@@ -1,0 +1,38 @@
+name: Oukitel Cloud MQTT Bridge
+version: "1.0.0"
+slug: oukitel_bridge
+description: Standalone Cloud API to MQTT bridge for Oukitel Power Stations (P2001 Plus, P2001, P5000)
+url: https://github.com/VictorCV-DAM/oukitel-hassio-addons/tree/main/oukitel-bridge
+arch:
+  - aarch64
+  - amd64
+  - armv7
+startup: application
+boot: auto
+services:
+  - mqtt:need
+options:
+  region: "EU"
+  email: ""
+  password: ""
+  mqtt_broker: "core-mosquitto"
+  mqtt_port: 1883
+  mqtt_user: ""
+  mqtt_password: ""
+  polling_interval: 10
+  wake_interval: 25
+schema:
+  region: list(EU|US|CN|CUSTOM)
+  email: str
+  password: password
+  mqtt_broker: str
+  mqtt_port: int
+  mqtt_user: str?
+  mqtt_password: password?
+  polling_interval: int(5,120)
+  wake_interval: int(10,300)
+  custom_base_url: str?
+  custom_user_domain: str?
+  custom_user_domain_secret: str?
+  custom_appid: str?
+  custom_appversion: str?

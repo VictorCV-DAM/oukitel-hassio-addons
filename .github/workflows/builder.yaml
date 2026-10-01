@@ -1,0 +1,54 @@
+name: Builder
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    name: Build Add-on
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: ["aarch64", "amd64", "armv7"]
+        addon: ["oukitel-bridge"]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Get Addon information
+        id: info
+        uses: home-assistant/actions/helpers/info@master
+        with:
+          path: "./${{ matrix.addon }}"
+
+      - name: Check if addon should be built
+        id: check
+        run: |
+          if [[ "${{ steps.info.outputs.architectures }}" =~ ${{ matrix.arch }} ]]; then
+             echo "build_arch=true" >> "$GITHUB_OUTPUT"
+          else
+             echo "build_arch=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Login to GitHub Container Registry
+        if: steps.check.outputs.build_arch == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Add-on
+        if: steps.check.outputs.build_arch == 'true'
+        uses: home-assistant/builder@master
+        with:
+          args: |
+            --${{ matrix.arch }} \
+            --target /data/${{ matrix.addon }} \
+            --image "ghcr.io/${{ github.repository_owner }}/{arch}-addon-${{ matrix.addon }}" \
+            --docker-hub "ghcr.io/${{ github.repository_owner }}" \
+            --addon

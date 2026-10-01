@@ -1,0 +1,13 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local environment & secrets
+.env
+config.local.json
+
+# IDE
+.vscode/
+.idea/
+*.swp

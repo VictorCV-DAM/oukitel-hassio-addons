@@ -3,11 +3,14 @@ FROM ${BUILD_FROM}
 
 ENV LANG=C.UTF-8
 
-# Install Python3, pip, and required system build packages
+# Install build dependencies if needed for pycryptodome on some arches
 RUN apk add --no-cache \
     python3 \
     py3-pip \
-    jq
+    jq \
+    gcc \
+    musl-dev \
+    libffi-dev
 
 WORKDIR /app
 

@@ -1,15 +1,15 @@
 """
 ================================================================================
-OUKITEL P2001 CLOUD API -> HOME ASSISTANT MQTT BRIDGE (V4 Cloud API - Autónomo)
+OUKITEL POWER STATION CLOUD API -> HOME ASSISTANT MQTT BRIDGE (Standalone Daemon)
 ================================================================================
-- Conexión 100% nativa y directa a la API Cloud de Acceleronix / Wonderfree.
-- CERO dependencia de smartphone o ADB: totalmente autónomo desde el MiniPC.
-- Control bidireccional de interruptores: AC, DC 12V y USB directamente desde Home Assistant.
-- Despertador / Keep-Alive autónomo continuo mediante high_frequency_reporting (LAN+WiFi).
-- Telemetría en tiempo real: batería, entrada total/AC/DC, salida, temperatura, tiempos.
-- Renovación automática y transparente de token de sesión OAuth.
-- Descubrimiento automático en Home Assistant (MQTT Discovery para sensores y switches).
-- 100% autocontenido y portable en la carpeta V4.
+- 100% native and direct connection to the official Acceleronix / Wonderfree Cloud API.
+- ZERO smartphone or Android ADB dependencies: fully autonomous daemon.
+- Bidirectional switch controls: toggle AC 230V, DC 12V, and USB directly from Home Assistant.
+- Autonomous sleep keep-alive via high_frequency_reporting.
+- Real-time telemetry: battery SOC, total/AC/DC input power, output power, temperature, times.
+- Transparent OAuth session token auto-renewal.
+- Home Assistant MQTT Auto-Discovery for all sensors and switches.
+- Standalone and portable across Windows, Linux, and macOS.
 ================================================================================
 """
 
@@ -35,13 +35,40 @@ else:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 CONFIG_FILE = os.path.join(BASE_DIR, "config.json")
+ICON_FILE = os.path.join(BASE_DIR, "icon.ico")
 
-# Configuraciones de regiones de servidores disponibles
-# [NOTA]: 'EU' es la región principal probada y verificada en hardware real.
-# 'US' y 'CN' se incluyen de forma [EXPERIMENTAL] a partir de los endpoints descubiertos en el APK oficial.
+
+def set_windows_console_icon():
+    """Sets the console window and taskbar icon on Windows if icon.ico is present."""
+    if not sys.platform.startswith("win"):
+        return
+    if not os.path.exists(ICON_FILE):
+        return
+    try:
+        import ctypes
+        hwnd = ctypes.windll.kernel32.GetConsoleWindow()
+        if hwnd:
+            IMAGE_ICON = 1
+            LR_LOADFROMFILE = 0x00000010
+            WM_SETICON = 0x0080
+            ICON_SMALL = 0
+            ICON_BIG = 1
+            hicon_small = ctypes.windll.user32.LoadImageW(None, ICON_FILE, IMAGE_ICON, 16, 16, LR_LOADFROMFILE)
+            hicon_big = ctypes.windll.user32.LoadImageW(None, ICON_FILE, IMAGE_ICON, 32, 32, LR_LOADFROMFILE)
+            if hicon_small:
+                ctypes.windll.user32.SendMessageW(hwnd, WM_SETICON, ICON_SMALL, hicon_small)
+            if hicon_big:
+                ctypes.windll.user32.SendMessageW(hwnd, WM_SETICON, ICON_BIG, hicon_big)
+    except Exception:
+        pass
+
+
+# Configuration of available cloud server regions
+# [NOTE]: 'EU' is the primary verified region tested on physical hardware.
+# 'US' and 'CN' are included as [EXPERIMENTAL] based on official APK endpoints.
 REGION_SERVERS = {
     "EU": {
-        "name": "Europa (Verificado)",
+        "name": "Europe (Verified)",
         "base_url": "https://iot-api.acceleronix.io",
         "user_domain": "E.SP.4294967410",
         "user_domain_secret": "3aRNUwWahjyANa7WfBK2wCCkxCexB6nXxKJwXxfePvzf",
@@ -49,7 +76,7 @@ REGION_SERVERS = {
         "appversion": "3.7.5"
     },
     "US": {
-        "name": "Norteamérica / USA [EXPERIMENTAL]",
+        "name": "North America / USA [EXPERIMENTAL]",
         "base_url": "https://iot-api.quectelus.com",
         "user_domain": "E.SP.4294967410",
         "user_domain_secret": "3aRNUwWahjyANa7WfBK2wCCkxCexB6nXxKJwXxfePvzf",
@@ -70,8 +97,8 @@ REGION_SERVERS = {
 DEFAULT_CONFIG = {
     "cloud": {
         "region": "EU",
-        "email": "victigre3000@gmail.com",
-        "password": "GqUBR@W1PIOWvU",
+        "email": "your_email@example.com",
+        "password": "your_password",
         "base_url": REGION_SERVERS["EU"]["base_url"],
         "user_domain": REGION_SERVERS["EU"]["user_domain"],
         "user_domain_secret": REGION_SERVERS["EU"]["user_domain_secret"],
@@ -79,10 +106,10 @@ DEFAULT_CONFIG = {
         "appversion": REGION_SERVERS["EU"]["appversion"]
     },
     "mqtt": {
-        "broker": "192.168.1.219",
+        "broker": "192.168.1.XXX",
         "port": 1883,
-        "user": "victorlike",
-        "password": "kzW3kEw&F8cCbZ",
+        "user": "",
+        "password": "",
         "topic_base": "homeassistant/sensor/oukitel"
     },
     "polling": {
@@ -173,8 +200,8 @@ class AcceleronixCloudClient:
         return hashlib.sha256(raw.encode('utf-8')).hexdigest()
 
     def login(self) -> bool:
-        """Autenticación en la nube de Acceleronix con renovación automática."""
-        log.info("Iniciando sesión en la nube de Acceleronix...")
+        """Authenticate with Acceleronix / Quectel Cloud with auto-renewal."""
+        log.info("Authenticating with Acceleronix / Quectel Cloud...")
         chars = string.ascii_letters + string.digits
         random_str = ''.join(random.choice(chars) for _ in range(16))
 
@@ -205,20 +232,20 @@ class AcceleronixCloudClient:
                 self.access_token = data["accessToken"]["token"]
                 self.token_expiry = data["accessToken"].get("expirationTime", int(time.time()) + 7000)
                 self.refresh_token = data["refreshToken"]["token"]
-                log.info("✅ Sesión iniciada con éxito. Token válido hasta: %s (auto-renovable)",
+                log.info("✅ Successfully authenticated. Token valid until: %s (auto-renewable)",
                          time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.token_expiry)))
                 return True
             else:
-                log.error("❌ Error de inicio de sesión: %s (código %s)", res.get("msg"), res.get("code"))
+                log.error("❌ Login error: %s (code %s)", res.get("msg"), res.get("code"))
                 return False
         except Exception as e:
-            log.error("⚠️ Excepción durante el login: %s", e)
+            log.error("⚠️ Exception during cloud login: %s", e)
             return False
 
     def ensure_authenticated(self):
-        """Asegura que el token sea válido; si está próximo a expirar (120s antes) o no existe, renueva solo."""
+        """Ensures the access token is valid; auto-renews 120s before expiry or if null."""
         if not self.access_token or time.time() > (self.token_expiry - 120):
-            log.info("🔄 Token próximo a caducar o nulo. Renovando automáticamente...")
+            log.info("🔄 Token expiring or null. Automatically renewing session...")
             return self.login()
         return True
 
@@ -232,7 +259,7 @@ class AcceleronixCloudClient:
         }
 
     def fetch_device_info(self) -> bool:
-        """Obtiene el identificador del dispositivo (deviceKey y productKey)."""
+        """Fetches device identifier (deviceKey and productKey)."""
         self.ensure_authenticated()
         url = f"{BASE_URL}/v2/binding/enduserapi/userDeviceList"
         try:
@@ -245,27 +272,27 @@ class AcceleronixCloudClient:
                     self.device_key = dev["deviceKey"]
                     self.product_key = dev["productKey"]
                     self.device_name = dev.get("deviceName", "Oukitel P2001")
-                    log.info("🔋 Dispositivo detectado: %s (DK: %s, PK: %s)",
+                    log.info("🔋 Power station detected: %s (DK: %s, PK: %s)",
                              self.device_name, self.device_key, self.product_key)
                     return True
                 else:
-                    log.error("❌ No se encontraron dispositivos vinculados a esta cuenta.")
+                    log.error("❌ No devices found registered in this account.")
                     return False
             elif res.get("code") == 5032:
-                log.warning("Token expirado, reintentando login...")
+                log.warning("Token expired, retrying login...")
                 self.login()
                 return self.fetch_device_info()
             else:
-                log.error("Error al obtener lista de dispositivos: %s", res.get("msg"))
+                log.error("Error retrieving device list: %s", res.get("msg"))
                 return False
         except Exception as e:
-            log.error("Excepción en fetch_device_info: %s", e)
+            log.error("Exception in fetch_device_info: %s", e)
             return False
 
     def control_device(self, properties_list: list) -> bool:
         """
-        Envía comandos de control físico a la batería mediante la API REST oficial de Quectel/Acceleronix.
-        properties_list: Lista de diccionarios, ej. [{"ac_switch": True}], [{"high_frequency_reporting": 3}]
+        Sends hardware control commands to the power station via the official Acceleronix REST API.
+        properties_list: List of dicts, e.g. [{"ac_switch": True}], [{"high_frequency_reporting": 3}]
         """
         self.ensure_authenticated()
         if not self.device_key or not self.product_key:
@@ -291,29 +318,29 @@ class AcceleronixCloudClient:
 
             if code == 200:
                 tickets = [item.get("ticket") for item in res.get("data", {}).get("successList", [])]
-                log.info("⚡ [Cloud Command] Éxito enviando %s (Ticket: %s)", properties_list, tickets)
+                log.info("⚡ [Cloud Command] Successfully sent %s (Ticket: %s)", properties_list, tickets)
                 return True
             elif code == 5032:
-                log.warning("Token expirado en control_device, renovando sesión...")
+                log.warning("Token expired in control_device, renewing session...")
                 self.login()
                 return self.control_device(properties_list)
             else:
-                log.error("❌ Error de control en Cloud: %s (código %s)", res.get("msg"), code)
+                log.error("❌ Cloud control error: %s (code %s)", res.get("msg"), code)
                 return False
         except Exception as e:
-            log.error("⚠️ Excepción al enviar comando de control: %s", e)
+            log.error("⚠️ Exception sending control command: %s", e)
             return False
 
     def wake_device(self) -> bool:
         """
-        Despierta y mantiene activa la batería solicitando reporte de alta frecuencia (Wi-Fi + LAN).
+        Wakes and keeps the battery active by requesting high-frequency reporting (Wi-Fi + LAN).
         high_frequency_reporting = 3
         """
-        log.info("🔔 [Keep-Alive] Enviando orden de reporte de alta frecuencia a la batería...")
+        log.info("🔔 [Keep-Alive] Sending high-frequency reporting keep-alive command...")
         return self.control_device([{"high_frequency_reporting": 3}])
 
     def get_telemetry(self) -> dict:
-        """Consulta la telemetría en tiempo real desde la API Cloud."""
+        """Queries real-time telemetry from the Cloud API."""
         self.ensure_authenticated()
         if not self.device_key or not self.product_key:
             if not self.fetch_device_info():
@@ -327,12 +354,12 @@ class AcceleronixCloudClient:
             res = r.json()
 
             if res.get("code") == 5032:
-                log.warning("Token caducado en consulta. Renovando sesión...")
+                log.warning("Token expired during telemetry fetch. Renewing session...")
                 self.login()
                 return self.get_telemetry()
 
             if res.get("code") != 200:
-                log.warning("Respuesta no OK de telemetría: %s", res)
+                log.warning("Non-OK telemetry response: %s", res)
                 return {}
 
             data = res.get("data", {})
@@ -381,36 +408,36 @@ class AcceleronixCloudClient:
 
 
 # ==========================================
-# --- MQTT Y HOME ASSISTANT DISCOVERY ---
+# --- MQTT AND HOME ASSISTANT DISCOVERY ---
 # ==========================================
-def configurar_descubrimiento_ha(client: mqtt.Client):
-    """Publica la configuración de Home Assistant MQTT Discovery para sensores y switches."""
+def configure_ha_discovery(client: mqtt.Client):
+    """Publishes Home Assistant MQTT Discovery configuration for sensors and switches."""
     device_info = {
         "identifiers": ["oukitel_p2001_station"],
         "name": "Oukitel P2001",
         "model": "P2001 Plus",
         "manufacturer": "OUKITEL",
-        "sw_version": "V4 Cloud API Autónomo"
+        "sw_version": "Standalone Cloud MQTT Bridge 1.0.0"
     }
 
-    # Sensores de telemetría (lectura)
-    sensores = [
-        ("battery",              "Batería Oukitel",           "%",   "battery",         "measurement", "mdi:battery-charging"),
-        ("input_watts",          "Entrada Total",             "W",   "power",           "measurement", "mdi:solar-power"),
-        ("output_watts",         "Salida Total",              "W",   "power",           "measurement", "mdi:flash"),
-        ("temperature",          "Temperatura Oukitel",       "°C",  "temperature",     "measurement", "mdi:thermometer"),
-        ("ac_input_watts",       "Entrada AC",                "W",   "power",           "measurement", "mdi:transmission-tower"),
-        ("dc_input_watts",       "Entrada DC (Solar)",        "W",   "power",           "measurement", "mdi:solar-panel"),
-        ("remain_time",          "Tiempo Restante Descarga",  "min", "duration",        "measurement", "mdi:timer-outline"),
-        ("remain_charging_time", "Tiempo Restante Carga",     "min", "duration",        "measurement", "mdi:timer-sand"),
-        ("ac_charging_limit",    "Límite Carga AC",           "%",   None,              "measurement", "mdi:gauge"),
-        ("wifi_signal",          "Señal WiFi Oukitel",        "dBm", "signal_strength", "measurement", "mdi:wifi"),
+    # Telemetry sensors (read-only)
+    sensors = [
+        ("battery",              "Oukitel Battery",             "%",   "battery",         "measurement", "mdi:battery-charging"),
+        ("input_watts",          "Total Input Power",          "W",   "power",           "measurement", "mdi:solar-power"),
+        ("output_watts",         "Total Output Power",         "W",   "power",           "measurement", "mdi:flash"),
+        ("temperature",          "Oukitel Temperature",        "°C",  "temperature",     "measurement", "mdi:thermometer"),
+        ("ac_input_watts",       "AC Input Power",             "W",   "power",           "measurement", "mdi:transmission-tower"),
+        ("dc_input_watts",       "DC Solar Input Power",       "W",   "power",           "measurement", "mdi:solar-panel"),
+        ("remain_time",          "Remaining Discharge Time",   "min", "duration",        "measurement", "mdi:timer-outline"),
+        ("remain_charging_time", "Remaining Charge Time",      "min", "duration",        "measurement", "mdi:timer-sand"),
+        ("ac_charging_limit",    "AC Charging Limit",          "%",   None,              "measurement", "mdi:gauge"),
+        ("wifi_signal",          "WiFi Signal",                "dBm", "signal_strength", "measurement", "mdi:wifi"),
     ]
 
-    for id_sensor, nombre, unidad, clase, state_cl, icono in sensores:
+    for id_sensor, name, unit, dev_class, state_cl, icon in sensors:
         config_topic = f"homeassistant/sensor/oukitel_{id_sensor}/config"
         payload = {
-            "name": nombre,
+            "name": name,
             "state_topic": f"{TOPIC_BASE}/{id_sensor}",
             "unique_id": f"oukitel_p2001_{id_sensor}",
             "availability_topic": AVAILABILITY_TOPIC,
@@ -418,33 +445,33 @@ def configurar_descubrimiento_ha(client: mqtt.Client):
             "payload_not_available": "offline",
             "device": device_info,
         }
-        if unidad:
-            payload["unit_of_measurement"] = unidad
-        if clase:
-            payload["device_class"] = clase
+        if unit:
+            payload["unit_of_measurement"] = unit
+        if dev_class:
+            payload["device_class"] = dev_class
         if state_cl:
             payload["state_class"] = state_cl
-        if icono:
-            payload["icon"] = icono
+        if icon:
+            payload["icon"] = icon
         client.publish(config_topic, json.dumps(payload), retain=True)
 
-    # Switches (accionadores interactivos bidireccionales)
+    # Switches (bidirectional remote controls)
     switches = [
-        ("ac_switch",  "Interruptor AC",     "mdi:power-socket-eu"),
-        ("dc_switch",  "Interruptor DC 12V", "mdi:car-electric"),
-        ("usb_switch", "Interruptor USB",    "mdi:usb-port"),
+        ("ac_switch",  "AC Output",     "mdi:power-socket-eu"),
+        ("dc_switch",  "DC 12V Output", "mdi:car-electric"),
+        ("usb_switch", "USB Output",    "mdi:usb-port"),
     ]
-    for id_sw, nombre, icono in switches:
+    for id_sw, name, icon in switches:
         config_topic = f"homeassistant/switch/oukitel_{id_sw}/config"
         payload = {
-            "name": nombre,
+            "name": name,
             "state_topic":   f"{TOPIC_BASE}/{id_sw}",
             "command_topic": f"{TOPIC_BASE}/{id_sw}/set",
             "payload_on":    "ON",
             "payload_off":   "OFF",
             "state_on":      "ON",
             "state_off":     "OFF",
-            "icon": icono,
+            "icon": icon,
             "unique_id": f"oukitel_p2001_{id_sw}",
             "availability_topic": AVAILABILITY_TOPIC,
             "payload_available":     "online",
@@ -454,36 +481,37 @@ def configurar_descubrimiento_ha(client: mqtt.Client):
         }
         client.publish(config_topic, json.dumps(payload), retain=True)
 
-    log.info("✅ Entidades registradas en Home Assistant MQTT Discovery.")
+    log.info("✅ Entities registered in Home Assistant MQTT Discovery.")
 
 
 # ==========================================
-# --- BUCLE PRINCIPAL ---
+# --- MAIN LOOP ---
 # ==========================================
 def main():
-    log.info("Iniciando Oukitel Cloud MQTT Bridge V4 (100% Autónomo - Sin Móvil/ADB)...")
-    log.info("Configuración: %s", CONFIG_FILE)
+    set_windows_console_icon()
+    log.info("Starting Oukitel Cloud MQTT Bridge (100% Autonomous - Zero Mobile/ADB)...")
+    log.info("Configuration file: %s", CONFIG_FILE)
     if SELECTED_REGION in REGION_SERVERS:
         reg_info = REGION_SERVERS[SELECTED_REGION]
-        log.info("🌍 Región Cloud seleccionada: %s - %s (%s)", SELECTED_REGION, reg_info["name"], BASE_URL)
+        log.info("🌍 Selected Cloud Region: %s - %s (%s)", SELECTED_REGION, reg_info["name"], BASE_URL)
         if SELECTED_REGION != "EU":
-            log.warning("⚠️ [AVISO EXPERIMENTAL]: La región '%s' se basa en los endpoints de la app oficial pero no ha sido verificada con hardware físico.", SELECTED_REGION)
+            log.warning("⚠️ [EXPERIMENTAL NOTICE]: Region '%s' is based on official endpoints but unverified on physical units.", SELECTED_REGION)
     else:
-        log.info("🌍 Región Cloud seleccionada: PERSONALIZADA (%s)", BASE_URL)
+        log.info("🌍 Selected Cloud Region: CUSTOM (%s)", BASE_URL)
 
     cloud = AcceleronixCloudClient(CLOUD_EMAIL, CLOUD_PASSWORD)
     if not cloud.login():
-        log.error("No se pudo iniciar sesión en la nube. Revisa las credenciales en config.json.")
+        log.error("Failed to authenticate with cloud. Please verify credentials in config.json.")
         sys.exit(1)
 
     if not cloud.fetch_device_info():
-        log.error("No se pudo obtener información del dispositivo.")
+        log.error("Could not retrieve device information.")
         sys.exit(1)
 
-    # Enviar un wake inicial para despertar la batería
+    # Initial wake command
     cloud.wake_device()
 
-    # Estado actual en memoria para los switches
+    # In-memory switch states
     current_switches = {
         "ac_switch": False,
         "dc_switch": False,
@@ -503,43 +531,43 @@ def main():
 
     def on_connect(client, userdata, flags, rc, properties=None):
         if rc == 0:
-            log.info("✅ Conectado al broker MQTT en %s:%s", MQTT_BROKER, MQTT_PORT)
-            configurar_descubrimiento_ha(client)
+            log.info("✅ Connected to MQTT broker at %s:%s", MQTT_BROKER, MQTT_PORT)
+            configure_ha_discovery(client)
             for topic in COMMAND_TOPICS:
                 client.subscribe(topic)
-                log.info("📥 Suscrito a topic de comando: %s", topic)
+                log.info("📥 Subscribed to command topic: %s", topic)
         else:
-            log.error("Error de conexión MQTT: código %s", rc)
+            log.error("MQTT connection error: code %s", rc)
 
     def on_message(client, userdata, msg):
-        """Gestiona comandos ON/OFF emitidos desde Home Assistant hacia la batería vía Cloud API."""
+        """Handles ON/OFF commands received via MQTT."""
         topic   = msg.topic
         payload = msg.payload.decode(errors="replace").strip().upper()
         prop    = COMMAND_TOPICS.get(topic)
         if not prop:
             return
 
-        log.info("📥 [HA Command] %s → %s", prop, payload)
+        log.info("📥 [Command] %s → %s", prop, payload)
         if payload not in ("ON", "OFF"):
-            log.warning("Payload no reconocido '%s' en %s, descartado.", payload, topic)
+            log.warning("Unrecognized payload '%s' on %s, discarding.", payload, topic)
             return
 
         target_state = (payload == "ON")
         current_state = current_switches.get(prop, False)
 
         if current_state == target_state:
-            log.info("ℹ️ Switch %s ya se encuentra en %s.", prop, payload)
+            log.info("ℹ️ Switch %s is already %s.", prop, payload)
             client.publish(f"{TOPIC_BASE}/{prop}", payload, retain=False)
             return
 
-        # Enviar comando de control directamente a la Cloud
+        # Send control command directly to Cloud
         success = cloud.control_device([{prop: target_state}])
         if success:
             current_switches[prop] = target_state
             client.publish(f"{TOPIC_BASE}/{prop}", payload, retain=False)
-            log.info("✅ Estado físico de %s actualizado a %s en Home Assistant", prop, payload)
+            log.info("✅ Physical state of %s updated to %s", prop, payload)
         else:
-            log.error("❌ Falló la conmutación de %s", prop)
+            log.error("❌ Failed to toggle switch %s", prop)
 
     mqtt_client.on_connect = on_connect
     mqtt_client.on_message = on_message
@@ -548,10 +576,10 @@ def main():
         mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 60)
         mqtt_client.loop_start()
     except Exception as e:
-        log.error("No se pudo conectar al broker MQTT: %s", e)
+        log.error("Could not connect to MQTT broker: %s", e)
         sys.exit(1)
 
-    log.info("Iniciando sondeo de telemetría cada %s segundos.", INTERVALO_SEGUNDOS)
+    log.info("Starting telemetry polling every %s seconds.", INTERVALO_SEGUNDOS)
     offline_streak = 0
     last_wake_time = time.time()
 
@@ -567,7 +595,7 @@ def main():
             if metrics and metrics.get("online", False):
                 # ---- DISPOSITIVO ONLINE ----
                 if offline_streak > 0:
-                    log.info("✅ Dispositivo Oukitel en línea (tras %s ciclos offline).", offline_streak)
+                    log.info("✅ Oukitel station back online (after %s offline cycles).", offline_streak)
                 offline_streak = 0
                 mqtt_client.publish(AVAILABILITY_TOPIC, "online", retain=True)
 
@@ -610,26 +638,26 @@ def main():
 
                 log.info(
                     "📊 Bat: %s%% | In: %sW (AC:%sW DC:%sW) | Out: %sW | Temp: %s°C "
-                    "| Restante: %smin | AC:%s DC:%s USB:%s",
+                    "| Remaining: %smin | AC:%s DC:%s USB:%s",
                     battery, input_total, ac_input, dc_input, output_total, temp,
                     remain_time, ac_sw, dc_sw, usb_sw
                 )
 
             else:
-                # ---- DISPOSITIVO OFFLINE / SLEEP ----
+                # ---- DEVICE OFFLINE / SLEEP ----
                 offline_streak += 1
 
                 if offline_streak == 1:
-                    log.warning("⚠️ Dispositivo offline o en reposo. Intentando despertar...")
+                    log.warning("⚠️ Device offline or sleeping. Sending wake-up command...")
                     cloud.wake_device()
                     last_wake_time = time.time()
                 elif offline_streak % 2 == 0:
-                    log.warning("⚠️ Dispositivo en reposo (ciclo #%s). Reenviando orden de despertar...", offline_streak)
+                    log.warning("⚠️ Device sleeping (cycle #%s). Resending wake-up keep-alive...", offline_streak)
                     cloud.wake_device()
                     last_wake_time = time.time()
 
         except Exception as e:
-            log.error("Excepción en el ciclo de lectura: %s", e)
+            log.error("Exception in polling loop: %s", e)
 
         time.sleep(INTERVALO_SEGUNDOS)
 

@@ -1,5 +1,5 @@
 name: Oukitel Cloud MQTT Bridge
-version: "1.0.0"
+version: "1.0.1"
 slug: oukitel_bridge
 description: Standalone Cloud API to MQTT bridge for Oukitel Power Stations (P2001 Plus, P2001, P5000)
 url: https://github.com/VictorCV-DAM/oukitel-hassio-addons/tree/main/oukitel-bridge

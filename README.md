@@ -43,6 +43,23 @@ Standalone background service that connects directly to the Wonderfree / Acceler
 
 [👉 View Add-on Documentation](oukitel-bridge/DOCS.md)
 
+<br/>
+
+<div align="center">
+  <table width="100%">
+    <tr>
+      <td width="50%" align="center">
+        <b>Real-Time Telemetry & Bidirectional Controls</b><br/><br/>
+        <img src="docs/images/05_device_dashboard.png" alt="Oukitel Dashboard" width="95%"/>
+      </td>
+      <td width="50%" align="center">
+        <b>Adjustable Update Frequency & Options</b><br/><br/>
+        <img src="docs/images/04_options_frequency.png" alt="Update Frequency" width="95%"/>
+      </td>
+    </tr>
+  </table>
+</div>
+
 ---
 
 ## 👨‍💻 Author & Intellectual Property

@@ -89,6 +89,13 @@ Standalone background service that connects directly to the Wonderfree / Acceler
 
 ---
 
+## 🔗 Related Projects & Alternative Deployments
+
+* 🥇 **[ha-oukitel](https://github.com/VictorCV-DAM/ha-oukitel)**: Native Home Assistant Integration (GUI Config Flow, HACS).
+* 🐍 **[oukitel-portable-bridge](https://github.com/VictorCV-DAM/oukitel-portable-bridge)**: Standalone cross-platform Python MQTT daemon (Linux/Windows/macOS).
+
+---
+
 ## ☕ Support & Donations
 
 If this add-on has helped you integrate your power station effortlessly into Home Assistant OS, consider supporting continuous development and maintenance:

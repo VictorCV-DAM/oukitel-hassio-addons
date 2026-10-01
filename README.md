@@ -6,9 +6,9 @@
 
   [![GitHub Release](https://img.shields.io/github/v/release/VictorCV-DAM/oukitel-hassio-addons?style=for-the-badge&color=blue)](https://github.com/VictorCV-DAM/oukitel-hassio-addons/releases)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
-  [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Donate-orange?style=for-the-badge&logo=buy-me-a-coffee)](https://www.buymeacoffee.com/VictorCV)
-  [![PayPal](https://img.shields.io/badge/PayPal-Donate-blue?style=for-the-badge&logo=paypal)](https://www.paypal.me/VictorCVDAM)
-  [![Ko-fi](https://img.shields.io/badge/Ko--fi-Donate-red?style=for-the-badge&logo=ko-fi)](https://ko-fi.com/VictorCV)
+  [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Donate-orange?style=for-the-badge&logo=buy-me-a-coffee)](https://buymeacoffee.com/VictorCV)
+  [![PayPal](https://img.shields.io/badge/PayPal-Donate-blue?style=for-the-badge&logo=paypal)](https://paypal.me/victorcava)
+  [![Ko-fi](https://img.shields.io/badge/Ko--fi-Donate-red?style=for-the-badge&logo=ko-fi)](https://ko-fi.com/victorcv)
 </div>
 
 ---
@@ -59,8 +59,8 @@ Standalone background service that connects directly to the Wonderfree / Acceler
 If this add-on has helped you integrate your power station effortlessly into Home Assistant OS, consider supporting continuous development and maintenance:
 
 - ☕ **Buy Me a Coffee:** [buymeacoffee.com/VictorCV](https://www.buymeacoffee.com/VictorCV)
-- 🅿️ **PayPal:** [paypal.me/VictorCVDAM](https://www.paypal.me/VictorCVDAM)
-- 🔴 **Ko-fi:** [ko-fi.com/VictorCV](https://ko-fi.com/VictorCV)
+- 🅿️ **PayPal:** [paypal.me/victorcava](https://www.paypal.me/victorcava)
+- 🔴 **Ko-fi:** [ko-fi.com/victorcv](https://ko-fi.com/victorcv)
 - 💖 **GitHub Sponsors:** [github.com/sponsors/VictorCV-DAM](https://github.com/sponsors/VictorCV-DAM)
 
 Thank you for your support! ⭐

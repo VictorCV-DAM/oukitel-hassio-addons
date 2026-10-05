@@ -39,7 +39,7 @@ Standalone background service that connects directly to Oukitel power stations v
 - **Dual Transport (LAN + Cloud)**: Instant sub-second local push with cloud fallback.
 - **Individual Port Telemetry**: Discrete power monitoring for 4x Type-C, USB-A, Quick Charge, 12V DC, and 230V AC inverter output.
 - **Native Hardware Fault Status ENUM**: Direct dropdown integration with Home Assistant automations for thermal, overload, and hardware protection.
-- **Physics-Based Autonomy**: Real-time net energy balance engine ($$\text{net\_power} = \text{total\_input} - \text{total\_output}$$) eliminating firmware 99-hour overflows.
+- **Physics-Based Autonomy**: Real-time net energy balance engine  `net_power = total_input - total_output` eliminating firmware 99-hour overflows.
 - **Interactive Remote Controls**: AC 230V, DC 12V, and USB switches, AC charge limit slider, and frequency/voltage selectors.
 - **No Smartphone / No ADB Needed**: Fully autonomous daemon.
 - **MQTT Auto-Discovery**: Automatic creation of all entities in Home Assistant.

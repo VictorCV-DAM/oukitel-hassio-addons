@@ -1635,6 +1635,16 @@ def main():
 
                 bridge.publish_state()
 
+                s = bridge.state
+                rem = s.get("remain_time") or s.get("remain_charging_time") or s.get("remaining_time") or 0
+                log.info(
+                    "⚡ [LAN] Bat: %s%% | In: %sW (AC:%sW DC:%sW) | Out: %sW (AC:%sW DC:%sW) | Temp: %s°C | Remaining: %smin | Fault: %s",
+                    s.get("battery"), s.get("input_watts"), s.get("ac_input_watts"),
+                    s.get("dc_input_watts"), s.get("output_watts"), s.get("ac_output_power"),
+                    s.get("dc_output_power"), s.get("temperature"), rem,
+                    s.get("hardware_fault_status", "Normal"),
+                )
+
             elif CONNECTION_MODE == MODE_LAN:
                 # ---- LAN ONLY, NO SESSION ----
                 bridge.set_transport("LAN (waiting)")

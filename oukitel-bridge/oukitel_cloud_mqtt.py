@@ -35,6 +35,12 @@ from Crypto.Util.Padding import pad
 import paho.mqtt.client as mqtt
 from paho.mqtt.enums import CallbackAPIVersion
 
+if sys.platform.startswith("win"):
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 BRIDGE_VERSION = "1.3.0"
 
 FAULT_STATUS_OPTIONS = [
@@ -58,6 +64,7 @@ CONFIG_FILE = os.path.join(BASE_DIR, "config.json")
 ICON_FILE = os.path.join(BASE_DIR, "icon.ico")
 DATA_DIR = os.environ.get("OUKITEL_DATA_DIR", BASE_DIR)
 CACHE_FILE = os.path.join(DATA_DIR, ".oukitel_cache.json")
+LOG_FILE = os.path.join(DATA_DIR, "oukitel_bridge.log")
 
 
 def set_windows_console_icon():
@@ -199,13 +206,49 @@ AVAILABILITY_TOPIC = f"{TOPIC_BASE}/availability"
 POLL_INTERVAL = int(cfg.get("polling", {}).get("interval_seconds", DEFAULT_CONFIG["polling"]["interval_seconds"]))
 WAKE_INTERVAL = int(cfg.get("polling", {}).get("wake_interval_seconds", DEFAULT_CONFIG["polling"]["wake_interval_seconds"]))
 
-# Logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="[%(asctime)s] %(message)s",
-    datefmt="%H:%M:%S"
-)
+# Logging setup (Dual: Console + Persistent File)
 log = logging.getLogger("OukitelBridge")
+log.setLevel(logging.INFO)
+
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setFormatter(logging.Formatter("[%(asctime)s] %(message)s", datefmt="%H:%M:%S"))
+
+try:
+    file_handler = logging.FileHandler(LOG_FILE, mode="a", encoding="utf-8")
+    file_handler.setFormatter(
+        logging.Formatter("[%(asctime)s] [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+    )
+    log.handlers = [console_handler, file_handler]
+except Exception as _log_err:
+    log.handlers = [console_handler]
+    print(f"Warning: Could not initialize log file '{LOG_FILE}': {_log_err}")
+
+
+def handle_uncaught_exception(exc_type, exc_value, exc_traceback):
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+    log.critical("💥 Uncaught exception:", exc_info=(exc_type, exc_value, exc_traceback))
+    if sys.platform.startswith("win") and sys.stdin and sys.stdin.isatty():
+        try:
+            input("\n[ERROR] An unhandled error occurred. Press Enter to exit...")
+        except Exception:
+            pass
+
+
+sys.excepthook = handle_uncaught_exception
+
+
+def fatal_exit(message: str, code: int = 1) -> None:
+    """Logs fatal error, notes log file path, and pauses before exiting if interactive on Windows."""
+    log.error(message)
+    log.info("📄 Complete execution log available at: %s", LOG_FILE)
+    if sys.platform.startswith("win") and sys.stdin and sys.stdin.isatty():
+        try:
+            input("\n[STOP] Press Enter to close this window...")
+        except Exception:
+            pass
+    sys.exit(code)
 
 
 # ==========================================
@@ -1466,6 +1509,20 @@ def main():
     set_windows_console_icon()
     log.info("Starting Oukitel MQTT Bridge %s (LAN + Cloud)...", BRIDGE_VERSION)
     log.info("Configuration file: %s", CONFIG_FILE)
+    log.info("Log file: %s", LOG_FILE)
+
+    if not os.path.exists(CONFIG_FILE):
+        fatal_exit(
+            f"❌ Configuration file '{CONFIG_FILE}' not found!\n"
+            f"Please copy 'config.example.json' to 'config.json' and fill in your Wonderfree credentials and MQTT broker details."
+        )
+
+    if CLOUD_EMAIL in ("your_email@example.com", "", None) or CLOUD_PASSWORD in ("your_password", "", None):
+        fatal_exit(
+            f"❌ Valid credentials not configured in '{CONFIG_FILE}'!\n"
+            f"Please edit 'config.json' and set your real Wonderfree email and password."
+        )
+
     log.info("🎛️ Connection mode: %s", {
         MODE_AUTO: "AUTO (LAN preferred + Cloud fallback)",
         MODE_LAN: "LAN ONLY (local, no cloud polling)",
@@ -1491,8 +1548,7 @@ def main():
         cloud.device_key = cache["device_key"]
         cloud.auth_key = cache["auth_key"]
     else:
-        log.error("Failed to authenticate with cloud. Please verify credentials and internet access.")
-        sys.exit(1)
+        fatal_exit("❌ Failed to authenticate with cloud. Please verify credentials and internet access.")
 
     device_key = cloud.device_key
     auth_key = cloud.auth_key or cache.get("auth_key")
@@ -1501,8 +1557,7 @@ def main():
     lan_enabled = CONNECTION_MODE != MODE_CLOUD and bool(auth_key)
     if CONNECTION_MODE != MODE_CLOUD and not auth_key:
         if CONNECTION_MODE == MODE_LAN:
-            log.error("❌ LAN mode requested but no authKey is available.")
-            sys.exit(1)
+            fatal_exit("❌ LAN mode requested but no authKey is available.")
         log.warning("⚠️ No authKey available — LAN disabled, using cloud only.")
 
     if cloud_ok and CONNECTION_MODE != MODE_LAN:
@@ -1551,8 +1606,8 @@ def main():
         mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 60)
         mqtt_client.loop_start()
     except Exception as e:
-        log.error("Could not connect to MQTT broker: %s", e)
-        sys.exit(1)
+        fatal_exit(f"❌ Could not connect to MQTT broker ({MQTT_BROKER}:{MQTT_PORT}): {e}")
+
 
     if lan_enabled:
         threading.Thread(target=bridge.lan_supervisor, name="lan-supervisor", daemon=True).start()

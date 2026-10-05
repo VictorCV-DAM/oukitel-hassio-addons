@@ -20,6 +20,8 @@ MQTT_PASS=$(bashio::config 'mqtt_password')
 
 INTERVAL=$(bashio::config 'polling_interval')
 WAKE_INTERVAL=$(bashio::config 'wake_interval')
+CONNECTION_MODE=$(bashio::config 'connection_mode' 'auto')
+LAN_HOST=$(bashio::config 'lan_host' '')
 
 # Auto-discovery fallback for Home Assistant Core Mosquitto Add-on
 if bashio::var.is_empty "${MQTT_BROKER}" || [ "${MQTT_BROKER}" = "core-mosquitto" ]; then
@@ -32,7 +34,7 @@ if bashio::var.is_empty "${MQTT_BROKER}" || [ "${MQTT_BROKER}" = "core-mosquitto
     fi
 fi
 
-bashio::log.info "Configuring Bridge with Region: ${REGION}"
+bashio::log.info "Configuring Bridge with Region: ${REGION} (Mode: ${CONNECTION_MODE})"
 
 cat <<EOF > "${APP_CONFIG}"
 {
@@ -42,6 +44,10 @@ cat <<EOF > "${APP_CONFIG}"
     "password": "${PASSWORD}",
     "appid": "277",
     "appversion": "3.7.5"
+  },
+  "connection": {
+    "mode": "${CONNECTION_MODE}",
+    "lan_host": "${LAN_HOST}"
   },
   "mqtt": {
     "broker": "${MQTT_BROKER}",

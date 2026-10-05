@@ -31,14 +31,18 @@ Or manually:
 > [!TIP]
 > _All-in-one_ addons are configured to work completely stand-alone inside Home Assistant OS / Supervised.
 
-### ⚡ Oukitel Cloud MQTT Bridge
+### ⚡ Oukitel Power Station MQTT Bridge
 _All-in-one_
 
-Standalone background service that connects directly to the Wonderfree / Acceleronix Cloud API and publishes all telemetry, diagnostics, and bidirectional control switches (AC, DC 12V, USB) into Home Assistant via MQTT Discovery.
+Standalone background service that connects directly to Oukitel power stations via **Local LAN (TCP 6607, AES-128)** with automatic **Cloud API fallback**, publishing complete individual port telemetry, diagnostic health alarms, and bidirectional controls into Home Assistant via MQTT Discovery.
 
+- **Dual Transport (LAN + Cloud)**: Instant sub-second local push with cloud fallback.
+- **Individual Port Telemetry**: Discrete power monitoring for 4x Type-C, USB-A, Quick Charge, 12V DC, and 230V AC inverter output.
+- **Native Hardware Fault Status ENUM**: Direct dropdown integration with Home Assistant automations for thermal, overload, and hardware protection.
+- **Physics-Based Autonomy**: Real-time net energy balance engine ($$\text{net\_power} = \text{total\_input} - \text{total\_output}$$) eliminating firmware 99-hour overflows.
+- **Interactive Remote Controls**: AC 230V, DC 12V, and USB switches, AC charge limit slider, and frequency/voltage selectors.
 - **No Smartphone / No ADB Needed**: Fully autonomous daemon.
-- **MQTT Auto-Discovery**: Automatic creation of sensors and controls in Home Assistant.
-- **Dynamic Keep-Alive**: Prevents power station deep-sleep timeouts.
+- **MQTT Auto-Discovery**: Automatic creation of all entities in Home Assistant.
 - **Multi-Region**: Supports Europe (`EU`), North America (`US`), and China (`CN`).
 
 [👉 View Add-on Documentation](oukitel-bridge/DOCS.md)

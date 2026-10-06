@@ -5,7 +5,7 @@
   <p>Collection of ready-to-run Home Assistant Add-ons for Oukitel Power Stations</p>
 
   [![GitHub Release](https://img.shields.io/github/v/release/VictorCV-DAM/oukitel-hassio-addons?style=for-the-badge&color=blue)](https://github.com/VictorCV-DAM/oukitel-hassio-addons/releases)
-  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+  [![License: Free for Personal Use](https://img.shields.io/badge/License-Free%20for%20Personal%20Use-blue.svg?style=for-the-badge)](LICENSE)
   [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Donate-orange?style=for-the-badge&logo=buy-me-a-coffee)](https://buymeacoffee.com/VictorCV)
   [![PayPal](https://img.shields.io/badge/PayPal-Donate-blue?style=for-the-badge&logo=paypal)](https://paypal.me/victorcava)
   [![Ko-fi](https://img.shields.io/badge/Ko--fi-Donate-red?style=for-the-badge&logo=ko-fi)](https://ko-fi.com/victorcv)
@@ -89,7 +89,10 @@ Standalone background service that connects directly to Oukitel power stations v
 - **Author & Maintainer:** Víctor C. V. ([@VictorCV-DAM](https://github.com/VictorCV-DAM))
 - **Email:** `victorcvtrabajo@gmail.com`
 - **Copyright:** © 2024-2026 Víctor C. V. All rights reserved.
-- **License:** Released under the [MIT License](LICENSE).
+- **License:** [Free for Personal Use — All Rights Reserved](LICENSE).
+
+> [!NOTE]
+> **Free for Personal Use:** Any user is granted full, free permission to install, run, and use this add-on without restrictions in their personal Home Assistant instance. Redistribution, modification, or commercial exploitation is strictly prohibited without prior written consent.
 
 ---
 
